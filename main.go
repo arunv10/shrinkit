@@ -25,8 +25,11 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 
+	"github.com/arunv10/shrinkit/user"
 	pb "github.com/arunv10/shrinkit/user"
+	"github.com/ysugimoto/grpc-graphql-gateway/runtime"
 
 	"google.golang.org/grpc"
 )
@@ -52,10 +55,22 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	s := grpc.NewServer()
-	pb.RegisterUserServiceServer(s, &server{})
-	log.Printf("server listening at %v", lis.Addr())
-	if err := s.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+
+	go func() {
+		s := grpc.NewServer()
+		pb.RegisterUserServiceServer(s, &server{})
+		log.Printf("server listening at %v", lis.Addr())
+		if err := s.Serve(lis); err != nil {
+			log.Fatalf("failed to serve: %v", err)
+		}
+	}()
+
+	mux := runtime.NewServeMux()
+
+	if err := user.RegisterUserServiceGraphql(mux); err != nil {
+		log.Fatalln(err)
 	}
+	http.Handle("/graphql", mux)
+	log.Printf("server supports graphql on port: %v", ":8888")
+	log.Fatalln(http.ListenAndServe(":8888", nil))
 }

@@ -1,1 +1,3 @@
 # shrinkit
+
+go install github.com/ysugimoto/grpc-graphql-gateway/protoc-gen-graphql/...
